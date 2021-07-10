@@ -34,6 +34,21 @@ class Graph{
   std::vector<node> V;
   std::unique_ptr<LL<pair_type>[]> adj;
 
+  // -------------------------------------------------
+  // dijkstra - private
+  // -------------------------------------------------
+  
+  //init_sssp(std::vector<unsigned int>& d, std::vector<unsigned int>& pred) {}
+
+/*
+  relax(Q, u, v, w){
+    if(d[u]+w < d[v]){
+      update_dist(Q, v, d[u]+w);
+      pred[v] = u;
+    }
+  }
+  */
+
   bst<unsigned int, T> build_queue(){
     std::pair<unsigned int, T> p;
     bst<unsigned int, T> b;
@@ -54,6 +69,10 @@ public:
   
   ~Graph() noexcept= default;
   
+ // : n_vertices{n}, 
+ //   adj{new LL<pair_type>[n]},
+ //   V{new node[n]}
+      //V[i] = node{i};
   explicit Graph(const unsigned int n) 
   : n_vertices{n}, adj{new LL<pair_type>[n]} 
     {
@@ -66,7 +85,9 @@ public:
   Graph(std::initializer_list<T> l) 
   : n_vertices{static_cast<unsigned int>(l.size())},
     adj{new LL<pair_type>[l.size()]} 
+    //elem{new T[list.size()]},
     {
+    //std::unique_ptr<T[]> elem;
     std::unique_ptr<T[]> elem{new T[l.size()]};
     std::copy(l.begin(),l.end(), elem.get());
     for(unsigned int i{0}; i<l.size(); i++){
@@ -82,6 +103,20 @@ public:
     adj[start].insert(pair_type(end, weight),insert_method::push_front);
   }
  
+  // -------------------------------------------------
+  // dijkstra - public
+  // -------------------------------------------------
+  
+  void dijkstra(unsigned int s){
+    std::vector<int> d;
+    std::vector<int> pred;
+    for(unsigned int i{0}; i<V.size(); i++){
+      d.push_back(-1);
+      pred.push_back(-1);
+      }
+    d[s]=0;
+    auto q = build_queue();
+  }    
 
   // -------------------------------------------------
   // operator overloading
