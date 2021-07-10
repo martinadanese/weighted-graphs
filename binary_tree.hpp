@@ -419,7 +419,7 @@ public:
       std::cout << "the value is not present" << std::endl;
       return;}
     
-    size--;
+    _size--;
     if(to_remove == head.get() || to_remove->parent->left.get() == to_remove)
       left=1;
 
