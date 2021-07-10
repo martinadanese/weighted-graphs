@@ -49,10 +49,13 @@ class Graph{
   }
   */
 
-  bst<unsigned int, T> build_queue(){
+  bst<unsigned int, T> build_queue(unsigned int s){
+    
     std::pair<unsigned int, T> p;
     bst<unsigned int, T> b;
-    for (auto i{0}; i<V.size(); ++i){
+    for (unsigned int i{0}; i<V.size(); ++i){
+      if (i ==s)
+        continue;
       p.first = V[i].vertex;
       p.second = V[i].value;
       b.insert(p);
@@ -69,10 +72,6 @@ public:
   
   ~Graph() noexcept= default;
   
- // : n_vertices{n}, 
- //   adj{new LL<pair_type>[n]},
- //   V{new node[n]}
-      //V[i] = node{i};
   explicit Graph(const unsigned int n) 
   : n_vertices{n}, adj{new LL<pair_type>[n]} 
     {
@@ -85,9 +84,7 @@ public:
   Graph(std::initializer_list<T> l) 
   : n_vertices{static_cast<unsigned int>(l.size())},
     adj{new LL<pair_type>[l.size()]} 
-    //elem{new T[list.size()]},
     {
-    //std::unique_ptr<T[]> elem;
     std::unique_ptr<T[]> elem{new T[l.size()]};
     std::copy(l.begin(),l.end(), elem.get());
     for(unsigned int i{0}; i<l.size(); i++){
@@ -115,7 +112,7 @@ public:
       pred.push_back(-1);
       }
     d[s]=0;
-    auto q = build_queue();
+    auto q = build_queue(s);
   }    
 
   // -------------------------------------------------
@@ -127,7 +124,7 @@ public:
     for(unsigned int i{0}; i<g.V.size(); i++){
       os << "Vertex " << g.V[i].vertex << ", value " << g.V[i].value << "\n";
       for(unsigned int j{0}; j<g.adj[i].size(); j++)
-        os << "  -> " << (g.adj[i])[j].first << ", w:" << (g.adj[i])[j].second;
+        os << "  -> [" << (g.adj[i])[j].first << ", " << (g.adj[i])[j].second << "]";
       os << "\n\n";
     }
     return os;
