@@ -49,16 +49,14 @@ class Graph{
   }
   */
 
-  bst<unsigned int, T> build_queue(unsigned int s){
+  bst<int, node> build_queue(unsigned int s){
     
-    std::pair<unsigned int, T> p;
-    bst<unsigned int, T> b;
+    bst<int, node> b; // dist and node
+    std::cout << V.size() << std::endl;
     for (unsigned int i{0}; i<V.size(); ++i){
-      if (i ==s)
-        continue;
-      p.first = V[i].vertex;
-      p.second = V[i].value;
-      b.insert(p);
+    //  if (i ==s)
+    //    continue;
+      b.insert(std::pair<int,node>(-i,V[i]));
     }
     std::cout << b << std::endl;
     return b;
@@ -107,12 +105,22 @@ public:
   void dijkstra(unsigned int s){
     std::vector<int> d;
     std::vector<int> pred;
+
     for(unsigned int i{0}; i<V.size(); i++){
-      d.push_back(-1);
+      d.push_back(-i-1);
       pred.push_back(-1);
       }
+    
     d[s]=0;
-    auto q = build_queue(s);
+    bst<int, node> q = build_queue(s);
+    std::cout << "q size " << q.get_size() << std::endl;
+    //std::pair<int, Graph<unsigned int>::node> u;
+    /*while (q.get_size() > 0){
+    // std::pair<int, Graph<unsigned int>::node> u = std::move(q.remove_min());
+     std::pair<int, node> u = q.remove_min();
+     std::cout << "q size " << q.get_size() << std::endl;
+    }
+    */
   }    
 
   // -------------------------------------------------

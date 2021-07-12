@@ -1,12 +1,14 @@
 #ifndef	__BST_
 #define __BST_
 
+#include <cstdlib> 
 #include <functional>
 #include <iostream>
 #include <utility>
 #include <memory>
 #include <iterator>
 #include <vector>
+#include <stdlib.h>
 //
 //
 // ===============================================================
@@ -17,7 +19,7 @@
 
 template <typename k_type, typename v_type>
   struct _node{
-    using pair_type = std::pair<const k_type, v_type>;
+    using pair_type = std::pair<k_type, v_type>;
     pair_type pair;
     std::unique_ptr<_node> right;
     std::unique_ptr<_node> left;
@@ -58,17 +60,19 @@ template <typename k_type, typename v_type>
   node *current; 
 
   public:
-    using value_type = O;// std::pair<O,T>; // O is a std::pair // 
+    using value_type = O;
     using reference = value_type&;
     using pointer = value_type*;
     using difference_type = std::ptrdiff_t; 
-    using iterator_category = std::bidirectional_iterator_tag;   //forward_iterator_tag;
+    using iterator_category = std::bidirectional_iterator_tag;   
     // iterator ctr
     explicit _iterator(node *p) noexcept: current{p} {}
   
+// ===============================================================
     reference operator*() const noexcept { return current->pair; }// when dereference I shall return pair
     pointer operator->() const noexcept{ return &**this; }
     
+// ===============================================================
     // pre-increment
     _iterator &operator++() noexcept{
       
@@ -88,8 +92,6 @@ template <typename k_type, typename v_type>
 	  current = tmp_p;
 	  return *this;
 	  }
-	  
-        
 
 	while (tmp_p->parent && (tmp_p->right.get() == current)) {
 	  current = tmp_p;
@@ -103,6 +105,7 @@ template <typename k_type, typename v_type>
       return *this;
     }
     
+// ===============================================================
     // post-increment
     _iterator operator++(int) {
       auto tmp{*this};
@@ -111,6 +114,7 @@ template <typename k_type, typename v_type>
     }
 
 
+// ===============================================================
     _iterator &operator--() {
       
       // check if there are sub-right trees
@@ -129,8 +133,6 @@ template <typename k_type, typename v_type>
 	  current = tmp_p;
 	  return *this;
 	  }
-	  
-        
 
 	while (tmp_p->parent && (tmp_p->left.get() == current)) {
 	  current = tmp_p;
@@ -144,11 +146,13 @@ template <typename k_type, typename v_type>
       return *this;
     }
 
+// ===============================================================
     _iterator operator--(int) {
       auto tmp{*this};
       --(*this);
       return tmp;
     }
+// ===============================================================
     // fine because comparing the pointers, not the keys
     friend bool operator==(const _iterator &a, const _iterator &b) {
       return (a.current == b.current);
@@ -168,15 +172,157 @@ template <typename k_type, typename v_type,
 class bst{
 
   using node = _node<k_type,v_type>;
-  using p_type = typename node::pair_type;// = p_t;
+  using p_type = typename node::pair_type;
+  using iterator = _iterator<k_type, v_type, p_type>;
+  using const_iterator = _iterator<k_type, v_type, const p_type>;
   OP op = OP{};
   std::unique_ptr<node> head;  
   std::size_t _size{0};
 
+// ===============================================================
+//  utilities
+// ===============================================================
+
+// ===============================================================
+//  place in the middle
+// ===============================================================
+  std::pair<iterator,bool> place_in_the_middle(node* tmp, node* _node){
+    
+    std::vector<p_type> vec_tmp;
+    vec_tmp = store_branch(vec_tmp, 1, tmp);
+    vec_tmp.push_back(tmp->pair);
+    vec_tmp = store_branch(vec_tmp, 0, tmp);
+
+    auto par = tmp->parent;
+    tmp->parent = nullptr;
+    if (par->right.get() == tmp){
+      _node->parent = par;
+      par->right.reset(_node);
+      _balance(vec_tmp, 0, vec_tmp.size());
+      return std::pair<iterator,bool>{ iterator(_node) , 1};
+      }
+    else {
+      _node->parent = par;
+      par->left.reset(_node);
+      _balance(vec_tmp, 0, vec_tmp.size());
+      return std::pair<iterator,bool>{ iterator(_node) , 1 };
+      }
+  }
+
+// ===============================================================
+//  balance
+// ===============================================================
+  void _balance(const std::vector<typename node::pair_type>& tmp, std::size_t sidx, std::size_t eidx) noexcept {
+   
+    if (eidx == sidx)
+      return;
+
+    _insert(tmp[(eidx+sidx)/2]);
+    
+    if ((eidx+sidx)/2 != sidx)
+      _balance(tmp, sidx, (eidx+sidx)/2);
+    if ((eidx+sidx)/2+1 != eidx)
+      _balance(tmp, (eidx+sidx)/2+1, eidx);
+  
+  }
+
+// ===============================================================
+//  store branch
+// ===============================================================
+  
+  std::vector<p_type>&  store_branch(std::vector<p_type>& tmp, const bool store_left, node* to_remove) noexcept {
+    
+    bool am_left=0;
+    if(to_remove == head.get() || to_remove->parent->left.get() == to_remove)
+      am_left=1;
+    
+    auto it = iterator(to_remove);
+    
+    // ==================================================
+    if (am_left && !store_left){
+      ++it;
+      //right branch (between to_remove and parent) removed and reinsered after.
+      while (it != iterator(to_remove->parent)){
+	tmp.push_back(*it);
+        ++it;}
+    }
+
+    // ==================================================
+    else if (!am_left && store_left){
+      --it;
+      //left branch (between to_remove and parent) removed and reinsered after.
+      while (it != iterator(to_remove->parent)){
+        tmp.push_back(*it);
+        --it;}
+    }
+
+    // ==================================================
+    else if (!am_left && !store_left){
+      ++it;
+      auto par = to_remove->parent;
+      while(par->parent && par->parent->right.get() == par)
+        par = par->parent;
+      iterator stop=end();
+      if (par->parent) // if not head
+        stop = (iterator(par->parent));
+
+      //left branch (between to_remove and parent) removed and reinsered after.
+      while (it != stop){
+	tmp.push_back(*(it));
+	++it;} 
+    }
+
+    // ==================================================
+    else if (am_left && store_left){
+      auto par = to_remove->parent;
+      while(par->parent && par->parent->left.get() == par)
+        par = par->parent;
+      iterator stop=begin();
+      if (par->parent) // if head
+        stop = ++(iterator(par->parent));
+
+      //left branch (between to_remove and parent) removed and reinsered after.
+      while (it != stop)
+	tmp.push_back(*(--it));
+        
+    }
+    return tmp;
+    
+  }
 
 
+// ===============================================================
+//  _erase
+// ===============================================================
+  
+  void _erase(const node* to_remove) noexcept {
+    
+    bool left=0;
+    if(to_remove == head.get() || to_remove->parent->left.get() == to_remove)
+      left=1;
+    
+    if(left) {
+      if(to_remove == head.get() ){
+        head.reset(head->left.release());
+        head->parent=nullptr;}
+      else{
+        auto par = to_remove->parent;
+        par->left.reset(to_remove->left.release());
+        if(par->left)
+          par->left->parent = par;}
+      }
+    else {
+      auto par = to_remove->parent;
+      par->right.reset(to_remove->right.release());
+      if(par->right)
+        par->right->parent = par;
+    }
+  }
+
+
+// ===============================================================
 public:
-
+// ===============================================================
 
 
   bst() noexcept = default;
@@ -188,9 +334,8 @@ public:
 //   begin & end
 // ===============================================================
 
-  using iterator = _iterator<k_type, v_type, p_type>;
-  using const_iterator = _iterator<k_type, v_type, const p_type>;
 
+// ===============================================================
   /*
    * _b: to avoid code duplication
    * begin node: the one with the smallest k
@@ -208,11 +353,13 @@ public:
   const_iterator begin() const noexcept { return const_iterator{_b()};}
   const_iterator cbegin() const noexcept { return const_iterator{_b()};} 
 
+// ===============================================================
   // define end iterators
   iterator end() noexcept { return iterator{nullptr}; }
   const_iterator end() const noexcept { return const_iterator{nullptr}; }
   const_iterator cend() const noexcept { return const_iterator{nullptr}; }
 
+// ===============================================================
   /*
    * _last: to avoid code duplication
    * last node: the one with the highest k, 
@@ -236,6 +383,7 @@ public:
   std::pair<iterator, bool> insert(p_type&& x) {return _insert(std::move(x));}
   
 
+// ===============================================================
   template <typename O>
   std::pair<iterator,bool> _insert(O&& v) {
     
@@ -243,7 +391,6 @@ public:
     auto tmp = head.get();
     bool found=1;
     _size++;
-
 
     if (!tmp){
       head.reset(_node);
@@ -272,11 +419,46 @@ public:
             return std::pair<iterator,bool>{ iterator(_node) , found };
           }
       }
-      else {
-        found = 0;
-        _size--;
-        delete _node;
-        return std::pair<iterator,bool>{ end() , found };  
+      else {// if found a node with same key, order the value
+        while (!op(tmp->pair.first, v.first) && !op(tmp->pair.first, v.first)){
+	    if (v.second < tmp->pair.second ){
+	    std::cout << tmp->pair.first << std::endl;
+	      if (tmp->left){
+	        tmp = tmp->left.get();
+                if (tmp->pair.first != v.first)
+		  return place_in_the_middle(tmp,_node);
+		  }
+	      else {
+                _node->parent = tmp;
+	        tmp->left.reset(_node);
+                return std::pair<iterator,bool>{ iterator(_node) , found };
+	      }
+	    }
+            else if (tmp->pair.second < v.second) {
+              if (tmp->right){
+                tmp = tmp->right.get();
+                if (tmp->pair.first != v.first)
+	          {
+	        std::cout << "here" << std::endl;
+		  return place_in_the_middle(tmp,_node);
+		  }
+                }
+	      else {
+                _node->parent = tmp;
+                tmp->right.reset(_node);
+                return std::pair<iterator,bool>{ iterator(_node) , found };
+              }
+            }
+            else if (tmp->pair.second == v.second) {
+              found = 0;
+              _size--;
+              delete _node;
+              return std::pair<iterator,bool>{ end() , found };  
+	    }
+	}//esce il primo diverso 
+        
+	return place_in_the_middle(tmp, _node);
+        
       }
     }
     
@@ -320,18 +502,11 @@ public:
   /*
    * loop over all nodes until the desired one is found.
    */
-  iterator find(const k_type& x) noexcept {   
-    return iterator{_find(x)};  
-  }
+  iterator find(const k_type& x, const v_type& v) noexcept { return iterator{_find(x,v)}; }
+  const_iterator find(const k_type& x,  const v_type& v) const noexcept { return const_iterator{_find(x,v)}; }
 
 // ===============================================================
-  const_iterator find(const k_type& x) const noexcept {   
-    
-    return const_iterator{_find(x)};
-  }
-
-// ===============================================================
-  node* _find(const k_type& x) const noexcept {   
+  node* _find(const k_type& x, const v_type& v) const noexcept {   
     
     auto next = head.get();
     while (next) {
@@ -339,8 +514,17 @@ public:
         next = next->right.get();
       else if (op(x, next->pair.first))
         next = next->left.get();
-      else if (!op(x, next->pair.first) && !op(next->pair.first, x))
-        return next;
+      else if (!op(x, next->pair.first) && !op(next->pair.first, x)){
+        if (next->pair.second == v)
+	  return next;
+	else{ // if has same key but different value, look for same value
+          if (next->pair.second < v)
+            next = next->right.get();
+          else if (v < next->pair.second)
+            next = next->left.get();
+	  
+	}
+	}
     }
 
     //if not found
@@ -388,31 +572,14 @@ public:
     return;
   }
 
-// ===============================================================
-  
-  void _balance(std::vector<typename node::pair_type>& tmp, std::size_t sidx, std::size_t eidx) noexcept {
-   
-    if (eidx == sidx)
-      return;
-
-    _insert(tmp[(eidx+sidx)/2]);
-    
-    if ((eidx+sidx)/2 != sidx)
-      _balance(tmp, sidx, (eidx+sidx)/2);
-    if ((eidx+sidx)/2+1 != eidx)
-      _balance(tmp, (eidx+sidx)/2+1, eidx);
-  
-  }
     
 // ===============================================================
 //   erase
 // ===============================================================
- 
-
+  
   void erase(const k_type& x) noexcept {
     node* to_remove = _find(x);
     bool left=0;
-    std::vector<typename node::pair_type> tmp;
     auto it = iterator(to_remove);
    
     if (it == end()){
@@ -423,41 +590,37 @@ public:
     if(to_remove == head.get() || to_remove->parent->left.get() == to_remove)
       left=1;
 
-    if (left){
-      ++it;
-      //right branch (between to_remove and parent) removed and reinsered after.
-      while (it != iterator(to_remove->parent)){
-	tmp.push_back(*it);
-        ++it;}
-    }
-    else {
-      --it;
-      //left branch (between to_remove and parent) removed and reinsered after.
-      while (it != iterator(to_remove->parent)){
-        tmp.push_back(*it);
-        --it;}
-    }
+    std::vector<p_type> tmp;
+    tmp = store_branch(tmp, !left, to_remove);//store opposite branch
 
-
-    if(left) {
-      if(to_remove == head.get() ){
-        head.reset(head->left.release());
-        head->parent=nullptr;}
-      else{
-        auto par = to_remove->parent;
-        par->left.reset(to_remove->left.release());
-        if(par->left)
-          par->left->parent = par;}
-      }
-    else {
-      auto par = to_remove->parent;
-      par->right.reset(to_remove->right.release());
-      if(par->right)
-        par->right->parent = par;
-    }
-
+    _erase();
     // use _balance to insert values in a balanced way
     _balance(tmp, 0, tmp.size());
+  }
+
+// ===============================================================
+//   remove minimum
+// ===============================================================
+  
+  p_type remove_min() noexcept {
+    p_type it = *(begin());
+    std::cout <<it.first << std::endl; 
+    erase(it.first);
+
+    return it;
+  }
+  
+// ===============================================================
+//   update distance
+// ===============================================================
+  
+  p_type update_dist(const v_type& v, const k_type& d) noexcept {
+    
+    p_type it = *(begin());
+    std::cout <<it.first << std::endl; 
+    erase(it.first);
+
+    return it;
   }
 
 // ===============================================================
@@ -495,7 +658,7 @@ public:
       os << " ";
       return os;}
     for (const auto &x : b)
-      os << x.first << " ";
+      os << "[" << x.first << ", " << x.second << "]   ";
     return os;
   }
 };
