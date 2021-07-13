@@ -1,6 +1,7 @@
 #ifndef	__GRAPH_
 #define __GRAPH_
 
+#include <limits>
 #include <iostream>
 #include "ll.hpp"
 #include "binary_tree.hpp"
@@ -22,7 +23,38 @@ class Graph{
 
     node(const unsigned int& x, const T& t) : vertex{x}, value{t} {}
     node(unsigned int&& x, T& t) noexcept : vertex{std::move(x)}, value{std::move(t)} {}
+    
+  // -------------------------------------------------
+  // move + copy
+  // -------------------------------------------------
+    node(node&& n) noexcept = default;
+    node& operator=(node&& n) noexcept = default;
+    
+    node(const node& n) : value{n.value}, vertex{n.vertex} {}
+
+  // -------------------------------------------------
+  // op overloading
+  // -------------------------------------------------
+    friend
+    bool operator==(const node& n1, const node& n2) {
+      return n1.vertex==n2.vertex;
+    }
   
+    friend
+    bool operator<(const node& n1, const node& n2){
+      return n1.vertex<n2.vertex;
+    }
+    
+    friend
+    bool operator>(const node& n1, const node& n2){
+      return n1.vertex>n2.vertex;
+    }
+
+    friend
+    std::ostream& operator<<(std::ostream& os, const node& n) {
+      os << "(" << n.vertex << "," << n.value << ")" ;
+      return os;
+    }
   };
   /*
   adj is a vector of linked lists. The vector is owned by a pointer.
@@ -38,27 +70,34 @@ class Graph{
   // dijkstra - private
   // -------------------------------------------------
   
-  //init_sssp(std::vector<unsigned int>& d, std::vector<unsigned int>& pred) {}
-
-/*
-  relax(Q, u, v, w){
-    if(d[u]+w < d[v]){
-      update_dist(Q, v, d[u]+w);
-      pred[v] = u;
+  void relax(bst<int, unsigned int>& q, const std::pair<int,unsigned int>& u, const int v, const unsigned int w, std::vector<int>& d, std::vector<int>& pred){
+    if(d[u.second] + w < d[v] ){
+      std::cout << "   upd q is " << q << std::endl;
+      std::cout <<"updating: " << d[v] << " " << v << " " << d[u.second] + w <<std::endl;
+      q.update_dist( d[v], v, d[u.second] + w);
+      std::cout << "   upd q is " << q << std::endl;
+      pred[v] = u.second;
+      d[v] = d[u.second] + w;
     }
   }
-  */
+  
 
-  bst<int, node> build_queue(unsigned int s){
+  bst<int, unsigned int> build_queue(const unsigned int s){
     
-    bst<int, node> b; // dist and node
+    bst<int, unsigned int> b; // dist and node
     std::cout << V.size() << std::endl;
+    
+    int val;
     for (unsigned int i{0}; i<V.size(); ++i){
-    //  if (i ==s)
-    //    continue;
-      b.insert(std::pair<int,node>(-i,V[i]));
+      if (i ==s)
+        val = 0;
+      else
+        val = std::numeric_limits<int>::max();
+        
+      std::pair<int,unsigned int> p{val,V[i].vertex};
+      b.insert(p);
     }
-    std::cout << b << std::endl;
+    
     return b;
   }
 
@@ -82,9 +121,11 @@ public:
   Graph(std::initializer_list<T> l) 
   : n_vertices{static_cast<unsigned int>(l.size())},
     adj{new LL<pair_type>[l.size()]} 
-    {
+    
+  {
     std::unique_ptr<T[]> elem{new T[l.size()]};
     std::copy(l.begin(),l.end(), elem.get());
+    
     for(unsigned int i{0}; i<l.size(); i++){
       V.push_back(node{i,elem[i]});
     }
@@ -107,20 +148,29 @@ public:
     std::vector<int> pred;
 
     for(unsigned int i{0}; i<V.size(); i++){
-      d.push_back(-i-1);
+      d.push_back(std::numeric_limits<int>::max());
       pred.push_back(-1);
       }
     
     d[s]=0;
-    bst<int, node> q = build_queue(s);
-    std::cout << "q size " << q.get_size() << std::endl;
-    //std::pair<int, Graph<unsigned int>::node> u;
-    /*while (q.get_size() > 0){
-    // std::pair<int, Graph<unsigned int>::node> u = std::move(q.remove_min());
-     std::pair<int, node> u = q.remove_min();
-     std::cout << "q size " << q.get_size() << std::endl;
+    bst<int, unsigned int> q = build_queue(s);
+    std::cout << "q size is " << q.get_size() << std::endl;
+    std::cout << "q is " << q << "\n" << std::endl;
+    
+    std::pair<int, unsigned int> u;
+    while (q.get_size() > 0){
+      std::cout << "-->  re-start while " << std::endl;
+      std::cout << "q is " << q << std::endl;
+      std::cout << "q size is " << q.get_size() << std::endl;
+      u = q.remove_min();
+      std::cout << "extracting min: " << u.first << " " << u.second <<  std::endl;
+      std::cout << "q is " << q << std::endl;
+      for (auto& x : adj[u.second]){
+	relax(q, u, x.first, x.second, d, pred);
+	}
+      std::cout << "\n" << std::endl;
     }
-    */
+    
   }    
 
   // -------------------------------------------------

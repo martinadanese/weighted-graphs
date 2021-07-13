@@ -17,12 +17,13 @@ int main(){
   std::cout << l << std::endl;
 */
   
-  Graph<unsigned int> g{10,20,30,40};
+  Graph<unsigned int> g{10,20,30,40,50,60};
   g.edge(0,1);
-  g.edge(1,1);
-  g.edge(0,3);
-  g.edge(1,3);
-  g.edge(3,1);
+  g.edge(0,2);
+  g.edge(2,3);
+  g.edge(3,4);
+  g.edge(4,5);
+  g.edge(1,5);
   std::cout << g <<std::endl;
   g.dijkstra(0);
 }
