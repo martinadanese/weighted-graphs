@@ -72,10 +72,8 @@ class Graph{
   
   void relax(bst<int, unsigned int>& q, const std::pair<int,unsigned int>& u, const int v, const unsigned int w, std::vector<int>& d, std::vector<int>& pred){
     if(d[u.second] + w < d[v] ){
-      std::cout << "   upd q is " << q << std::endl;
-      std::cout <<"updating: " << d[v] << " " << v << " " << d[u.second] + w <<std::endl;
+      //std::cout <<"updating: [" << d[v] << ", " << v << "] in [" << d[u.second] + w << ", " << v << "]" <<std::endl;
       q.update_dist( d[v], v, d[u.second] + w);
-      std::cout << "   upd q is " << q << std::endl;
       pred[v] = u.second;
       d[v] = d[u.second] + w;
     }
@@ -85,7 +83,6 @@ class Graph{
   bst<int, unsigned int> build_queue(const unsigned int s){
     
     bst<int, unsigned int> b; // dist and node
-    std::cout << V.size() << std::endl;
     
     int val;
     for (unsigned int i{0}; i<V.size(); ++i){
@@ -112,7 +109,6 @@ public:
   explicit Graph(const unsigned int n) 
   : n_vertices{n}, adj{new LL<pair_type>[n]} 
     {
-    std::cout << "ctr" << std::endl;
     for(unsigned int i{0}; i<n; i++)
       V.push_back(node{i});
   }
@@ -154,22 +150,23 @@ public:
     
     d[s]=0;
     bst<int, unsigned int> q = build_queue(s);
-    std::cout << "q size is " << q.get_size() << std::endl;
-    std::cout << "q is " << q << "\n" << std::endl;
     
     std::pair<int, unsigned int> u;
     while (q.get_size() > 0){
-      std::cout << "-->  re-start while " << std::endl;
-      std::cout << "q is " << q << std::endl;
-      std::cout << "q size is " << q.get_size() << std::endl;
+    //  std::cout << "-->  re-start while " << std::endl;
+    //  std::cout << "q is " << q << std::endl;
+    //  std::cout << "q size is " << q.get_size() << std::endl;
       u = q.remove_min();
-      std::cout << "extracting min: " << u.first << " " << u.second <<  std::endl;
-      std::cout << "q is " << q << std::endl;
+    //  std::cout << "extracting min: " << u.first << " " << u.second <<  std::endl;
       for (auto& x : adj[u.second]){
 	relax(q, u, x.first, x.second, d, pred);
 	}
-      std::cout << "\n" << std::endl;
+      //std::cout << "\n" << std::endl;
     }
+    std::cout << "Dijkstra's resulting distances are"  << std::endl;
+    for (auto& i : d)
+      std::cout << i << "  ";
+    std::cout << std:: endl;
     
   }    
 

@@ -660,7 +660,11 @@ public:
       return;}
     
     _size--;
-    
+    if (_size==0){
+      clear();
+      return;
+      }
+
     if( head->left.get() && (to_remove == head.get()) )
       left=1;
     else if(to_remove != head.get() && to_remove->parent->left.get() == to_remove)
@@ -706,6 +710,7 @@ public:
   void update_dist(const k_type& k, const v_type& v, const k_type& new_k) noexcept { update_dist(std::make_pair(k,v), new_k);}
   
   void update_dist(const p_type& p, const k_type& new_k) noexcept {
+    
     node* n = _find(p);
     p_type n_p = n->pair;
     n_p.first = new_k;
