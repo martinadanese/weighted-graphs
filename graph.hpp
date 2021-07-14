@@ -25,10 +25,10 @@ class Graph{
     node(unsigned int&& x, T& t) noexcept : vertex{std::move(x)}, value{std::move(t)} {}
     
   // -------------------------------------------------
-  // move + copy
+  // move + copy ctr
   // -------------------------------------------------
     node(node&& n) noexcept = default;
-    node& operator=(node&& n) noexcept = default;
+    //node& operator=(node&& n) noexcept = default;
     
     node(const node& n) : value{n.value}, vertex{n.vertex} {}
 
@@ -56,6 +56,9 @@ class Graph{
       return os;
     }
   };
+  
+
+
   /*
   adj is a vector of linked lists. The vector is owned by a pointer.
   The linked lists are ll of a pair of integers: 1) for node idx 2) for weight 
@@ -66,11 +69,14 @@ class Graph{
   std::vector<node> V;
   std::unique_ptr<LL<pair_type>[]> adj;
 
+
+
+
   // -------------------------------------------------
   // dijkstra - private
   // -------------------------------------------------
   
-  void relax(bst<int, unsigned int>& q, const std::pair<int,unsigned int>& u, const int v, const unsigned int w, std::vector<int>& d, std::vector<int>& pred){
+  void relax(bst<unsigned int, unsigned int>& q, const pair_type& u, const int v, const unsigned int w, std::vector<unsigned int>& d, std::vector<unsigned int>& pred) noexcept {
     if(d[u.second] + w < d[v] ){
       //std::cout <<"updating: [" << d[v] << ", " << v << "] in [" << d[u.second] + w << ", " << v << "]" <<std::endl;
       q.update_dist( d[v], v, d[u.second] + w);
@@ -80,18 +86,16 @@ class Graph{
   }
   
 
-  bst<int, unsigned int> build_queue(const unsigned int s){
+  bst<unsigned int, unsigned int> build_queue(const unsigned int s) noexcept {
+    bst<unsigned int, unsigned int> b; // dist and node  
+    unsigned int val;
     
-    bst<int, unsigned int> b; // dist and node
-    
-    int val;
     for (unsigned int i{0}; i<V.size(); ++i){
-      if (i ==s)
+      if (i == s)
         val = 0;
       else
         val = std::numeric_limits<int>::max();
-        
-      std::pair<int,unsigned int> p{val,V[i].vertex};
+      pair_type p{val,V[i].vertex};
       b.insert(p);
     }
     
@@ -101,30 +105,43 @@ class Graph{
 public:
 
   // -------------------------------------------------
-  // ctr
+  // ctr + dtr
   // -------------------------------------------------
   
-  ~Graph() noexcept= default;
+  ~Graph() noexcept = default;
   
-  explicit Graph(const unsigned int n) 
-  : n_vertices{n}, adj{new LL<pair_type>[n]} 
-    {
-    for(unsigned int i{0}; i<n; i++)
+
+  explicit Graph(unsigned int&& n) noexcept
+  : n_vertices{std::move(n)}, adj{new LL<pair_type>[n_vertices]} 
+  {
+    for(unsigned int i{0}; i<n_vertices; i++)
       V.push_back(node{i});
   }
   
-  //pass node value
+  
+  explicit Graph(const unsigned int& n) 
+  : n_vertices{n}, adj{new LL<pair_type>[n_vertices]} 
+  {
+    for(unsigned int i{0}; i<n_vertices; i++)
+      V.push_back(node{i});
+  }
+  
+
+
+  //pass node value in initializer list
   Graph(std::initializer_list<T> l) 
   : n_vertices{static_cast<unsigned int>(l.size())},
-    adj{new LL<pair_type>[l.size()]} 
-    
+    //V{l},
+    adj{new LL<pair_type>[l.size()]}
   {
+    //V.reserve(n_vertices);
+    //std::copy(l.begin(),l.end(), V.begin());
+    
     std::unique_ptr<T[]> elem{new T[l.size()]};
     std::copy(l.begin(),l.end(), elem.get());
     
-    for(unsigned int i{0}; i<l.size(); i++){
+    for(unsigned int i{0}; i<l.size(); i++)
       V.push_back(node{i,elem[i]});
-    }
   }
 
   // -------------------------------------------------
@@ -140,23 +157,24 @@ public:
   // -------------------------------------------------
   
   void dijkstra(unsigned int s){
-    std::vector<int> d;
-    std::vector<int> pred;
+    std::vector<unsigned int> d;
+    std::vector<unsigned int> pred;
 
-    for(unsigned int i{0}; i<V.size(); i++){
+    for(unsigned int i{0}; i<n_vertices; i++){
       d.push_back(std::numeric_limits<int>::max());
       pred.push_back(-1);
       }
     
     d[s]=0;
-    bst<int, unsigned int> q = build_queue(s);
+    bst<unsigned int, unsigned int> q = build_queue(s);
     
-    std::pair<int, unsigned int> u;
+    pair_type u;
+
     while (q.get_size() > 0){
     //  std::cout << "-->  re-start while " << std::endl;
     //  std::cout << "q is " << q << std::endl;
     //  std::cout << "q size is " << q.get_size() << std::endl;
-      u = q.remove_min();
+    u = q.remove_min();
     //  std::cout << "extracting min: " << u.first << " " << u.second <<  std::endl;
       for (auto& x : adj[u.second]){
 	relax(q, u, x.first, x.second, d, pred);
@@ -167,7 +185,7 @@ public:
     for (auto& i : d)
       std::cout << i << "  ";
     std::cout << std:: endl;
-    
+    q.clear();    
   }    
 
   // -------------------------------------------------

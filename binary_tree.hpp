@@ -214,7 +214,7 @@ class bst{
 // ===============================================================
   
 
-  std::pair<iterator,bool> insert_double_key(node* _node, node **tmp, p_type v, bool found){
+  std::pair<iterator,bool> insert_double_key(node* _node, node **tmp, const p_type& v, bool found) noexcept {
 	
 	while (!op((*tmp)->pair.first, v.first) && !op((*tmp)->pair.first, v.first)){
 	    
@@ -242,7 +242,7 @@ class bst{
 //  found double
 // ===============================================================
 
-  std::pair<iterator,bool> found_double(node* _node){
+  std::pair<iterator,bool> found_double(node* _node) noexcept {
     _size--;
     delete _node;
     return std::pair<iterator,bool>{ end() , 0 };  
@@ -253,7 +253,7 @@ class bst{
 //  search for place
 // ===============================================================
   
-  bool search_place(node* _node, node **tmp, std::unique_ptr<node>& next, bool found){
+  bool search_place(node* _node, node **tmp, std::unique_ptr<node>& next, bool found) noexcept {
     
     if (next)
       (*tmp) = next.get();
@@ -270,7 +270,7 @@ class bst{
 //  place in the middle
 // ===============================================================
   
-  std::pair<iterator,bool> place_in_the_middle(node* tmp, node* _node){
+  std::pair<iterator,bool> place_in_the_middle(node* tmp, node* _node) noexcept {
     
     std::vector<p_type> vec_tmp;
     store_branch(vec_tmp, 1, tmp);
@@ -280,7 +280,6 @@ class bst{
     auto par = tmp->parent;
     tmp->parent = nullptr;
     _node->parent = par;
-    // because they are taken away
     _size = _size - vec_tmp.size();
 
     if (par->right.get() == tmp)
@@ -303,7 +302,6 @@ class bst{
       return;
 
     _insert(tmp[(eidx+sidx)/2]);
-    //std::cout << "      balance, size:"<<_size << std::endl;
     
     if ((eidx+sidx)/2 != sidx)
       _balance(tmp, sidx, (eidx+sidx)/2);
@@ -393,12 +391,7 @@ class bst{
     // if node to remove is left child, substitute with its left child
     if(left) {
       if(to_remove == head.get() ){
-        //if(head->left)
-	  head.reset(head->left.release());
-       // else if (head->right)
-	//  head.reset(head->right.release());
-	//else 
-	  //clear();
+	head.reset(head->left.release());
         head->parent=nullptr;
 	}
       else{
@@ -410,12 +403,7 @@ class bst{
     // if node to remove is right child, substitute with its right child
     else {
       if(to_remove == head.get() ){
-        //if(head->left)
-	  head.reset(head->right.release());
-       // else if (head->right)
-	//  head.reset(head->right.release());
-	//else 
-	  //clear();
+	head.reset(head->right.release());
         head->parent=nullptr;
 	}
       else {
@@ -690,10 +678,8 @@ public:
     auto res = it->pair;
     
     if (_size==1){
-    //  std::cout << "here" << std::endl;
-      head.release();
+      head.reset();
       _size=0; 
-   //   std::cout << "here" << std::endl;
      } 
 
     else
@@ -712,8 +698,8 @@ public:
   void update_dist(const p_type& p, const k_type& new_k) noexcept {
     
     node* n = _find(p);
-    p_type n_p = n->pair;
-    n_p.first = new_k;
+    p_type n_p{n->pair};
+    n_p.first = std::move(new_k);
     erase(n->pair);
     insert(n_p);    
   }
