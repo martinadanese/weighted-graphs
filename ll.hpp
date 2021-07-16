@@ -4,8 +4,11 @@
 #include <iostream>
 #include <memory>
 #include <utility>
+#include <iterator>
 
 enum class insert_method { push_back, push_front };
+
+
 
 template <typename T>
 class LL{
@@ -25,9 +28,11 @@ class LL{
     
     ~node() = default;
   };
+  
 
 
-  // -------------------------------
+
+
   std::unique_ptr<node> head;
   std::size_t _size=0;
   
@@ -125,6 +130,18 @@ class LL{
       tmp = tmp->next.get();
     return tmp->value;
   }
+  
+  template <typename O>
+  class _iterator;
+  // -------------------------------
+  using iterator = _iterator<T>;
+  using const_iterator = _iterator<const T>;
+  
+  iterator begin() noexcept {return iterator{head.get()};}
+  const_iterator begin() const noexcept {return const_iterator{head.get()};}
+  
+  iterator end() noexcept {return iterator{nullptr};}
+  const_iterator end() const noexcept {return const_iterator{nullptr};}
 
   friend
   std::ostream& operator<<(std::ostream& os, LL& l){
@@ -136,6 +153,67 @@ class LL{
     return os;
   }
 
+};
+
+
+
+
+
+
+
+
+// -------------------------------
+//  iterator
+// -------------------------------
+template <typename T>
+template <typename O>
+class LL<T>::_iterator
+{
+using node = typename LL<T>::node;
+node *current; 
+
+public:
+  using value_type = O;
+  using reference = value_type&;
+  using pointer = value_type*;
+  using difference_type = std::ptrdiff_t; 
+  using iterator_category = std::forward_iterator_tag;   
+  // iterator ctr
+  explicit _iterator(node *p) noexcept: current{p} {}
+
+
+
+// ===============================================================
+  reference operator*() const noexcept { return current->value; }// when dereference I shall return pair
+  pointer operator->() const noexcept{ return &**this; }
+    
+
+
+// ===============================================================
+  // pre-increment
+  _iterator &operator++() noexcept{
+    //if(current->next)
+    current = current->next.get();
+    return *this;
+  }
+  
+
+
+// ===============================================================
+  // post-increment
+  _iterator operator++(int) {
+    auto tmp{*this};
+    ++(*this);
+    return tmp;
+  }
+
+// ===============================================================
+  friend bool operator==(const _iterator &a, const _iterator &b) {
+    return (a.current == b.current);
+  }
+  friend bool operator!=(const _iterator &a, const _iterator &b) { 
+    return !(a == b); 
+  }
 };
 
 #endif
