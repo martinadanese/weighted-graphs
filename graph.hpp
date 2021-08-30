@@ -19,10 +19,11 @@ class Graph{
     ~node() noexcept = default;
     
     explicit node(const unsigned int& x) : vertex{x}, value{x} {}
-    explicit node(unsigned int&& x) noexcept : vertex{std::move(x)}, value{vertex} {}
+    //explicit node(unsigned int&& x) noexcept : vertex{std::move(x)}, value{vertex} {}
 
     node(const unsigned int& x, const T& t) : vertex{x}, value{t} {}
-    node(unsigned int&& x, T& t) noexcept : vertex{std::move(x)}, value{std::move(t)} {}
+    //node(unsigned int&& x, T& t) noexcept : vertex{std::move(x)}, value{std::move(t)} {}
+    node(const unsigned int& x, T&& t) : vertex{x}, value{std::move(t)} {}
     
   // -------------------------------------------------
   // move + copy ctr
@@ -30,7 +31,8 @@ class Graph{
     node(node&& n) noexcept = default;
     //node& operator=(node&& n) noexcept = default;
     
-    node(const node& n) : value{n.value}, vertex{n.vertex} {}
+    //node(const node& n) : value{n.value}, vertex{n.vertex} {}
+    node(const node& n) = default; 
 
   // -------------------------------------------------
   // op overloading
@@ -47,7 +49,8 @@ class Graph{
     
     friend
     bool operator>(const node& n1, const node& n2){
-      return n1.vertex>n2.vertex;
+      //return n1.vertex>n2.vertex;
+      return n1>n2;
     }
 
     friend
@@ -76,7 +79,12 @@ class Graph{
   // dijkstra - private
   // -------------------------------------------------
   
-  void relax(bst<unsigned int, unsigned int>& q, const pair_type& u, const int v, const unsigned int w, std::vector<unsigned int>& d, std::vector<unsigned int>& pred) noexcept {
+  void relax(bst<unsigned int, unsigned int>& q, 
+             const pair_type& u, 
+	     const int v, 
+	     const unsigned int w, 
+	     std::vector<unsigned int>& d, 
+	     std::vector<unsigned int>& pred) noexcept {
     if(d[u.second] + w < d[v] ){
       //std::cout <<"updating: [" << d[v] << ", " << v << "] in [" << d[u.second] + w << ", " << v << "]" <<std::endl;
       q.update_dist( d[v], v, d[u.second] + w);
@@ -122,6 +130,7 @@ public:
   explicit Graph(const unsigned int& n) 
   : n_vertices{n}, adj{new LL<pair_type>[n_vertices]} 
   {
+    V.reserve(n_vertices);
     for(unsigned int i{0}; i<n_vertices; i++)
       V.push_back(node{i});
   }
@@ -135,8 +144,7 @@ public:
     adj{new LL<pair_type>[l.size()]}
   {
     //V.reserve(n_vertices);
-    //std::copy(l.begin(),l.end(), V.begin());
-    
+    //std::uninitialized_copy(l.begin(),l.end(), V.begin());
     std::unique_ptr<T[]> elem{new T[l.size()]};
     std::copy(l.begin(),l.end(), elem.get());
     
